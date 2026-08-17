@@ -37,6 +37,7 @@
 
     <a-entity id="rig" position="0 0 0">
       <a-camera look-controls wasd-controls stereocam="eye: left;"></a-camera>
+      <a-entity id="rightHand" meta-touch-controls="hand: right"></a-entity>
     </a-entity>
 
   </a-scene>
@@ -65,6 +66,15 @@
       vid.play();
       overlay.style.display = 'none';
     });
+
+    // A or B on the right Touch controller: stop and return to the landing page
+    const rightHand = document.getElementById('rightHand');
+    function backToLanding() {
+      vid.pause();
+      window.location.href = 'index.html';
+    }
+    rightHand.addEventListener('abuttondown', backToLanding);
+    rightHand.addEventListener('bbuttondown', backToLanding);
   </script>
 
 </body>
