@@ -5,38 +5,55 @@
   <title>3D Stereo VR</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-stereo-component@master/dist/aframe-stereo-component.min.js"></script>
 </head>
 <body style="margin:0;overflow:hidden;">
+
+  <script>
+    // Shows only its half of a side-by-side stereo video, and only to
+    // the matching eye's WebXR camera (three.js reserves render layer 1
+    // for the left-eye camera and layer 2 for the right-eye camera).
+    AFRAME.registerComponent('eye', {
+      schema: { type: 'string' },
+      init: function () {
+        const layer = this.data === 'left' ? 1 : 2;
+        const apply = () => {
+          const mesh = this.el.getObject3D('mesh');
+          if (mesh) mesh.layers.set(layer);
+        };
+        apply();
+        this.el.addEventListener('object3dset', apply);
+      }
+    });
+  </script>
 
   <a-scene background="color:#000">
 
     <a-assets>
-      <video id="vidsrc" src="colors_stairs_3d.mp4" loop webkit-playsinline playsinline preload="auto"></video>
+      <video id="vidsrc" loop webkit-playsinline playsinline preload="auto"></video>
     </a-assets>
 
     <a-light type="ambient" color="#ffffff" intensity="0.3"></a-light>
 
-    <!-- Left-eye and right-eye screens: same size/position, each sampling
-         its half of the side-by-side stereo video via the stereo component -->
-    <a-entity
+    <!-- Left-eye and right-eye screens: same size/position, each cropped
+         to its half of the side-by-side video via material offset/repeat -->
+    <a-entity id="leftScreen"
       geometry="primitive: plane; width: 2.25; height: 4"
-      material="shader: flat; src: #vidsrc"
+      material="shader: flat; src: #vidsrc; repeat: 0.5 1; offset: 0 0"
       position="0 2.1 -4"
-      stereo="eye: left">
+      eye="left">
     </a-entity>
 
-    <a-entity
+    <a-entity id="rightScreen"
       geometry="primitive: plane; width: 2.25; height: 4"
-      material="shader: flat; src: #vidsrc"
+      material="shader: flat; src: #vidsrc; repeat: 0.5 1; offset: 0.5 0"
       position="0 2.1 -4"
-      stereo="eye: right">
+      eye="right">
     </a-entity>
 
     <a-plane rotation="-90 0 0" width="30" height="30" color="#0d0d18"></a-plane>
 
     <a-entity id="rig" position="0 0 0">
-      <a-camera look-controls wasd-controls stereocam="eye: left;"></a-camera>
+      <a-camera look-controls wasd-controls></a-camera>
       <a-entity id="rightHand" oculus-touch-controls="hand: right"></a-entity>
     </a-entity>
 
@@ -48,7 +65,7 @@
       background:rgba(0,0,0,0.75); z-index:999; cursor:pointer; font-family:sans-serif;">
     <div style="text-align:center; color:#fff;">
       <div style="font-size:64px;">&#9658;</div>
-      <div style="font-size:20px; margin-top:10px;">Tap to play colors_stairs.mp4 (3D stereo)</div>
+      <div id="playLabel" style="font-size:20px; margin-top:10px;">Tap to play</div>
     </div>
   </div>
 
@@ -60,7 +77,24 @@
   </a>
 
   <script>
+    const params = new URLSearchParams(window.location.search);
+    const src = params.get('src') || 'colors_stairs_3d.mp4';
+    const title = params.get('title') || src;
+    // swap=true: the source pair was authored for cross-eye free-viewing
+    // (left half meant for the right eye), so flip which half each
+    // headset eye gets to reconstruct the intended depth.
+    const swap = params.get('swap') === 'true';
+
     const vid = document.getElementById('vidsrc');
+    vid.setAttribute('src', src);
+    document.getElementById('playLabel').textContent = 'Tap to play ' + title;
+    document.title = title;
+
+    if (swap) {
+      document.getElementById('leftScreen').setAttribute('material', 'offset', '0.5 0');
+      document.getElementById('rightScreen').setAttribute('material', 'offset', '0 0');
+    }
+
     const overlay = document.getElementById('playOverlay');
     overlay.addEventListener('click', () => {
       vid.play();
