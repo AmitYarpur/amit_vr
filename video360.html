@@ -11,7 +11,7 @@
   <a-scene background="color:#000">
 
     <a-assets>
-      <video id="vidsrc" src="Amit1.mp4" loop webkit-playsinline playsinline preload="auto"></video>
+      <video id="vidsrc" loop webkit-playsinline playsinline preload="auto"></video>
     </a-assets>
 
     <a-entity
@@ -32,7 +32,7 @@
       background:rgba(0,0,0,0.75); z-index:999; cursor:pointer; font-family:sans-serif;">
     <div style="text-align:center; color:#fff;">
       <div style="font-size:64px;">&#9658;</div>
-      <div style="font-size:20px; margin-top:10px;">Tap to play 360&deg; video</div>
+      <div id="playLabel" style="font-size:20px; margin-top:10px;">Tap to play</div>
     </div>
   </div>
 
@@ -44,8 +44,19 @@
   </a>
 
   <script>
-    const overlay = document.getElementById('playOverlay');
+    const params = new URLSearchParams(window.location.search);
+    const src = params.get('src');
+    const title = params.get('title') || src || '360 video';
+
     const vid = document.getElementById('vidsrc');
+    document.getElementById('playLabel').textContent = 'Tap to play ' + title;
+    document.title = title;
+
+    if (src) {
+      vid.setAttribute('src', src);
+    }
+
+    const overlay = document.getElementById('playOverlay');
     overlay.addEventListener('click', () => {
       vid.play();
       overlay.style.display = 'none';
